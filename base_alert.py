@@ -1,19 +1,24 @@
 from CiscoWheel.webex import Webex
 from CiscoWheel.mongo_db import MongoDb
 from CiscoWheel.splunk_push import *
+from CiscoWheel.email_alert import get_outlook_data
 from base64 import b64encode
 from random import choices
-from datetime import datetime
+from datetime import datetime, timedelta
 from generate_token import read_token_from_file, get_tokens_refresh_static
 
 class BaseAlertCapture:
+    mongo = MongoDb()
+    mail_list = get_outlook_data("Alert Capture", mongo.get_last_update("mix", "Alert-Capture-Email"), datetime.now())
+    mongo.update_last_update("mix", "Alert-Capture-Email", datetime.now()-timedelta(days=1))
+    webex = Webex()
+
     def __init__(self):
+        # input(self.mail_list)
         # Initialize class attributes here
-        self.webex = Webex()
         self.webex.headers["Authorization"] = None
         self.reset_token()
         print(self.webex.headers["Authorization"])
-        self.mongo = MongoDb()
         self.uctype = "alert-capture"
         self.source_type = "alert_sample_1"
         self.room_ids = []
@@ -40,11 +45,12 @@ class BaseAlertCapture:
             for message in data["items"]:
                 # aid = b64encode(f"{self.asg}_{message['created'].replace(':','').replace('-','').replace('Z','').replace('T', '')}_{time_now.timestamp()}_{i}".encode()).decode()
                 i += 1
-                t = {"criticality": None, "alert_space": room["name"], "alert_id": message["id"], "track_name": self.asg, "source": "webex","alert_raw": message["text"][:1000], "alert_created_on": message["created"], "alert_sent_by": message["personEmail"]}
+                t = {"criticality": None, "alert_space": room["name"], "alert_id": message["id"], "track_name": self.asg, "alert_source": "webex","alert_raw": message["text"][:1000], "alert_created_on": message["created"], "alert_sent_by": message["personEmail"]}
                 t.update(parse_function(message))
                 data_list.append(t)
                 print(*t.items(), sep="\n", end="\n\n\n")
             # print(data_list)
+        data_list.extend(self.get_email_data())
 
         push_bulk(data_list, self.uctype, self.asg, self.source_type)        
         self.mongo.update_last_update(self.asg, self.uctype, time_now)
