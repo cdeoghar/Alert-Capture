@@ -3,12 +3,12 @@ import requests
 import json
 import os
 
-clientID = "C12d73b781dfefdcebc358b0793c0afd405d5aaecab441e872c6bc28a0d014881"
-secretID = "f5c5d7db01c3f1a7cd935931a58f131a0c6f741fd05ae0f151d6df8da04f1a3c"
+clientID = "C570217bd6015c5f5913406706b77cca61877d7cfa87abff985026a39ade48685"
+secretID = "052958b143894bc4fc94b35630582b345c17066a0d7d4dd87656a2a19818bf00"
 redirectURI = "http://127.0.0.1:8083/oauth" # This could be different if you publicly expose this endpoint.
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-oauth_url = "https://webexapis.com/v1/authorize?client_id=C12d73b781dfefdcebc358b0793c0afd405d5aaecab441e872c6bc28a0d014881&response_type=code&redirect_uri=http%3A%2F%2F127.0.0.1%3A8083%2Foauth&scope=spark-compliance%3Amemberships_read%20spark-admin%3Aresource_groups_read%20spark%3Aall%20analytics%3Aread_all%20spark%3Apeople_read%20spark-admin%3Avideo_mesh_api_read%20spark-admin%3Aorganizations_read%20spark%3Amessages_read%20spark-admin%3Aworkspace_metrics_read%20spark-compliance%3Ateam_memberships_read%20spark%3Amemberships_read%20identity%3Aorganizations_read%20spark-admin%3Ahybrid_clusters_read%20identity%3Agroups_read%20identity%3Atokens_read%20spark-compliance%3Amessages_read%20spark-admin%3Aevents_read%20spark-compliance%3Ameetings_read%20identity%3Apeople_read%20spark-admin%3Aworkspaces_read%20spark-admin%3Aworkspace_locations_read%20spark%3Adevices_read%20spark-compliance%3Aevents_read%20spark-admin%3Aresource_group_memberships_read%20spark-compliance%3Arooms_read%20spark-admin%3Acall_qualities_read%20spark%3Akms%20audit%3Aevents_read%20spark-admin%3Ahybrid_connectors_read%20spark-admin%3Amessages_read%20spark-compliance%3Ateams_read%20spark-admin%3Areports_read%20spark%3Ateams_read&state=1234abcd"
+oauth_url = "https://webexapis.com/v1/authorize?client_id=C570217bd6015c5f5913406706b77cca61877d7cfa87abff985026a39ade48685&response_type=code&redirect_uri=http%3A%2F%2F127.0.0.1%3A8083%2Foauth&scope=spark%3Aall%20spark%3Akms&state=set_state_here"
 
 template1 = f"""<h1>GRANT INTEGRATION ACCESS</h1>
   <!-- STEP 1 : Button that kicks off the flow by sending your user to the following URL along with a standard set of OAuth query parameters, state parameter is                             hard coded here-->
@@ -25,9 +25,9 @@ def oauth():
   print("function : oauth()")
   """Retrieves oauth code to generate tokens for users"""
   state = request.args.get("state")
-  state = '1234abcd'
+  state = 'set_state_here'
   print('state : ' + state)
-  if state == '1234abcd':
+  if state == 'set_state_here':
     code = request.args.get("code") # STEP 2 : Capture value of the 
                                     # authorization code.
     print("OAuth code:", code)
@@ -69,7 +69,7 @@ def get_tokens_refresh():
     url = "https://webexapis.com/v1/access_token"
     headers = {'accept':'application/json','content-type':'application/x-www-form-urlencoded'}
     payload = ("grant_type=refresh_token&client_id={0}&client_secret={1}&"
-                    "refresh_token={2}").format(clientID, secretID, session['refresh_token'])
+                    "refresh_token={2}&expires_in=30368000&refresh_token_expires_in=40368000").format(clientID, secretID, session['refresh_token'])
     req = requests.post(url=url, data=payload, headers=headers)
     results = json.loads(req.text)
     
@@ -131,7 +131,7 @@ def get_tokens_refresh_static(refresh_token=None):
     url = "https://webexapis.com/v1/access_token"
     headers = {'accept':'application/json','content-type':'application/x-www-form-urlencoded'}
     payload = ("grant_type=refresh_token&client_id={0}&client_secret={1}&"
-                    "refresh_token={2}").format(clientID, secretID, refresh_token)
+                    "refresh_token={2}&expires_in=30368000&refresh_token_expires_in=40368000").format(clientID, secretID, refresh_token)
     req = requests.post(url=url, data=payload, headers=headers)
     results = json.loads(req.text)
     
@@ -183,7 +183,7 @@ def api_call() :
     response = requests.get(url=url, headers=headers)
     return response
 
-# if __name__ == '__main__':
-    # app.run("0.0.0.0", port=8083, debug=True)
+if __name__ == '__main__':
+    app.run("0.0.0.0", port=8083, debug=True)
 
-get_tokens_refresh_static()
+# get_tokens_refresh_static()

@@ -10,7 +10,6 @@ from generate_token import read_token_from_file, get_tokens_refresh_static
 class BaseAlertCapture:
     mongo = MongoDb()
     mail_list = get_outlook_data("Alert Capture", mongo.get_last_update("mix", "Alert-Capture-Email"), datetime.now())
-    mongo.update_last_update("mix", "Alert-Capture-Email", datetime.now()-timedelta(days=1))
     webex = Webex()
 
     def __init__(self):
@@ -40,6 +39,7 @@ class BaseAlertCapture:
         for room in room_ids:
             # input(f"{room['name']}: PRESS ENTER TO CONTINUE")
             room_id = room["id"]
+            # data = {"items":[]}
             data = self.get_webex_data(room_id, last_update, now)
             i = 0
             for message in data["items"]:
@@ -51,7 +51,9 @@ class BaseAlertCapture:
                 print(*t.items(), sep="\n", end="\n\n\n")
             # print(data_list)
         data_list.extend(self.get_email_data())
+        if self.mail_list: mongo.update_last_update("mix", "Alert-Capture-Email", datetime.now())#-timedelta(days=1))
 
+        print(data_list)
         push_bulk(data_list, self.uctype, self.asg, self.source_type)        
         self.mongo.update_last_update(self.asg, self.uctype, time_now)
 

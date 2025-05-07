@@ -104,18 +104,28 @@ class Deliver(BaseAlertCapture):
             if "Deliver" in i["body"]:
                 print(f"{i['subject']} : {i['sender']} : {i['received_time']}")
                 
+                alert_app = re.findall(r"App: (.*) Track", i['body'], re.MULTILINE)[0]
+                # alert_summary = i['body'].split("<https://cisco1.saas.appdynamics.com")[1].i['body'].split("Notes: ")[0]
+                alert_summary = "\n".join(i['body'].split("\r\nCount \tEvent Type \t\r\n")[1].split("\n")[1:]).split("This is an auto-generated email")[0].strip()
+                print("body :", i['body'])
+                print("alert_summary :", alert_summary)
+                
+                # input("Press Enter to continue...")
+                alert_type = re.findall(r"\t(.*) <", i['body'])[0]
                 t = {
                     "criticality": self.get_criticality(i['body']),
                     "alert_id": b64encode(f"{self.asg}{i['received_time']}{i['sender']}".encode()).decode(), 
                     "track_name": self.asg, 
-                    "alert_source": "email",
+                    "alert_source": "AppDynamics",
                     "alert_raw": i['body'],
                     "alert_title": i['subject'],
-                    "alert_summary": i['body'],
+                    "alert_summary": alert_summary.strip(),
                     "alert_created_on": i['received_time'], 
+                    "alert_app": alert_app.strip(),
                     "alert_sent_by": i['sender'],
+                    "alert_type": alert_type.strip()
                 }
-                print(*t.items(), sep="\n", end="\n\n\n")
+                # print(*t.items(), sep="\n", end="\n\n\n")
                 # input("Press Enter to continue...")
                 data_list.append(t)
         print("EMAIL DATA LIST :", data_list)
